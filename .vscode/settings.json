@@ -56,7 +56,7 @@
         "temp/": true,
         "Temp/": true
     },
-    "dotnet.defaultSolution": "MoSimBuilderDev.sln",
+    "dotnet.defaultSolution": "MoSimBuilder.sln",
     "cSpell.words": [
         "Amping",
         "Behaviour",
