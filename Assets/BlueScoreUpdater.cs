@@ -1,31 +1,32 @@
 using UnityEngine;
 using TMPro;
 using System.Collections.Generic;
+using static RobotSpawnController;
 
 public class BlueScoreUpdater : MonoBehaviour
 {
-    private float interval = 0.5f;
-    private float timer = 0f;
     public TextMeshProUGUI blueScoreText;
     public int Bluescore = 0;
-
     private GameObject robot;
     private Vector3 autonStartPosition;
     private bool robotFound = false;
     private bool autonCheckDone = false;
     private bool threePointsGiven = false;
+    GameObject foundRobot;
 
     public float autonTimeLimit = 15f;
     public float matchTimeLimit = 150f; // Total match time (2.5 minutes)
     public float endgameStartTime = 120f; // When endgame starts (2 minutes)
     private float startTime;
+    private float interval = 0.5f;
+    private float timer = 0f;
 
     // Endgame variables
     private bool endgameStarted = false;
     private bool parkScored = false;
     private bool deepClimbScored = false;
     private float parkThresholdY = 0.07603697f;
-    private float climbThresholdY = 0.1f; // Updated climb threshold
+    private float climbThresholdY = 0.25f; // Updated climb threshold
 
     // Endgame zone bounds (X and Z only, Y handled separately) - FIXED
     private float endgame_minX = -0.9460935f;
@@ -206,7 +207,7 @@ public class BlueScoreUpdater : MonoBehaviour
 
     bool InAutonomous()
     {
-        return (Time.time - startTime) <= autonTimeLimit;
+        return (Time.time - startTime) <= autonTimeLimit + 0.3f;
     }
 
     bool InEndgame()
@@ -222,338 +223,344 @@ public class BlueScoreUpdater : MonoBehaviour
 
     void Update()
     {
+        foundRobot = null;
         float elapsedTime = Time.time - startTime;
         timer += Time.deltaTime;
-        if (timer >= interval)
-        {
+        if (timer >= interval){
             timer = 0f; // Reset the timer
-                        // rest of update logic
-            float elapsedTime = Time.time - startTime;
-        }
-        // Try to find robot once it's spawned
-        if (!robotFound)
-        {
-            GameObject foundRobot = GameObject.Find("25-1323-2(Clone)");
-            if (foundRobot != null)
+
+            // Try to find robot once it's spawned
+            if (!robotFound)
             {
-                robot = foundRobot;
-                autonStartPosition = robot.transform.position;
-                robotFound = true;
-                Debug.Log("Robot found and tracking started.");
-            }
-        }
-
-        // Only check during auton
-        if (robotFound && !autonCheckDone && elapsedTime <= autonTimeLimit)
-        {
-            float distance = Vector3.Distance(robot.transform.position, autonStartPosition);
-
-            if (distance > 0.4f && !threePointsGiven)
-            {
-                AddBlueScore(3);
-                threePointsGiven = true;
-                Debug.Log("Robot moved in auton — 3 points awarded to Blue!");
-            }
-        }
-
-        // Stop checking after auton ends
-        if (elapsedTime > autonTimeLimit)
-        {
-            autonCheckDone = true;
-        }
-
-        // Check for endgame start
-        if (!endgameStarted && elapsedTime >= endgameStartTime)
-        {
-            endgameStarted = true;
-            Debug.Log("Endgame started!");
-        }
-
-        // Endgame scoring logic - only if match hasn't ended
-        if (robotFound && endgameStarted && !MatchEnded())
-        {
-            Vector3 robotPos = robot.transform.position;
-
-            Debug.Log($"Endgame check - Robot position: {robotPos}, Time: {elapsedTime}");
-
-            // Check if robot is in the endgame zone (X and Z bounds)
-            bool inEndgameZone = (robotPos.x >= endgame_minX && robotPos.x <= endgame_maxX &&
-                                 robotPos.z >= endgame_minZ && robotPos.z <= endgame_maxZ);
-
-            Debug.Log($"Robot in endgame zone: {inEndgameZone}");
-            Debug.Log($"Zone bounds - X: [{endgame_minX}, {endgame_maxX}], Z: [{endgame_minZ}, {endgame_maxZ}]");
-
-            if (inEndgameZone)
-            {
-                // Check if robot is doing deep climb (Y > climbThresholdY AND in endgame zone)
-                if (robotPos.y > climbThresholdY)
-                {
-                    // Robot is doing deep climb
-                    if (!deepClimbScored)
-                    {
-                        // If previously scored park, subtract those points first
-                        if (parkScored)
-                        {
-                            SubtractBlueScore(2);
-                            parkScored = false;
-                            Debug.Log("Upgrading from park to deep climb");
-                        }
-                        AddBlueScore(12);
-                        deepClimbScored = true;
-                        Debug.Log($"Robot deep climb at Y={robotPos.y} — 12 points awarded to Blue!");
-                    }
+                foundRobot = GameObject.Find("25-1323-2(Clone)");
+                /*
+                RobotSpawnController controller = gameHanlder.GetComponent<RobotSpawnController>();
+                if (controller != null){
+                    string robotName = controller.getRobotName() + "(Clone)";
+                    foundRobot = GameObject.Find(robotName);
                 }
-                else if (robotPos.y <= parkThresholdY)
+                */
+                if (foundRobot != null)
                 {
-                    // Robot is parked (below park threshold)
-                    if (!parkScored && !deepClimbScored)
+                    robot = foundRobot;
+                    autonStartPosition = robot.transform.position;
+                    robotFound = true;
+                    Debug.Log("Robot found and tracking started.");
+                }
+            }
+
+            // Only check during auton
+            if (robotFound && !autonCheckDone && elapsedTime <= autonTimeLimit)
+            {
+                float distance = Vector3.Distance(robot.transform.position, autonStartPosition);
+
+                if (distance > 0.1f && !threePointsGiven)
+                {
+                    AddBlueScore(3);
+                    threePointsGiven = true;
+                    Debug.Log("Robot moved in auton ï¿½ 3 points awarded to Blue!");
+                }
+            }
+
+            // Stop checking after auton ends
+            if (elapsedTime > autonTimeLimit)
+            {
+                autonCheckDone = true;
+            }
+
+            // Check for endgame start
+            if (!endgameStarted && elapsedTime >= endgameStartTime)
+            {
+                endgameStarted = true;
+                Debug.Log("Endgame started!");
+            }
+
+            // Endgame scoring logic - only if match hasn't ended
+            if (robotFound && endgameStarted && elapsedTime <= matchTimeLimit + 3f)
+            {
+                Vector3 robotPos = robot.transform.position;
+
+                Debug.Log($"Endgame check - Robot position: {robotPos}, Time: {elapsedTime}");
+
+                // Check if robot is in the endgame zone (X and Z bounds)
+                bool inEndgameZone = (robotPos.x >= endgame_minX && robotPos.x <= endgame_maxX &&
+                                    robotPos.z >= endgame_minZ && robotPos.z <= endgame_maxZ);
+
+                Debug.Log($"Robot in endgame zone: {inEndgameZone}");
+                Debug.Log($"Zone bounds - X: [{endgame_minX}, {endgame_maxX}], Z: [{endgame_minZ}, {endgame_maxZ}]");
+
+                if (inEndgameZone)
+                {
+                    // Check if robot is doing deep climb (Y > climbThresholdY AND in endgame zone)
+                    if (robotPos.y > climbThresholdY)
                     {
-                        AddBlueScore(2);
-                        parkScored = true;
-                        Debug.Log($"Robot parked at Y={robotPos.y} — 2 points awarded to Blue!");
+                        // Robot is doing deep climb
+                        if (!deepClimbScored)
+                        {
+                            // If previously scored park, subtract those points first
+                            if (parkScored)
+                            {
+                                SubtractBlueScore(2);
+                                parkScored = false;
+                                Debug.Log("Upgrading from park to deep climb");
+                            }
+                            AddBlueScore(12);
+                            deepClimbScored = true;
+                            Debug.Log($"Robot deep climb at Y={robotPos.y} ï¿½ 12 points awarded to Blue!");
+                        }
                     }
-                    else if (deepClimbScored)
+                    else if (robotPos.y <= parkThresholdY)
                     {
-                        // Robot dropped from climb to park level
-                        SubtractBlueScore(12);
-                        deepClimbScored = false;
-                        AddBlueScore(2);
-                        parkScored = true;
-                        Debug.Log($"Robot dropped from climb to park at Y={robotPos.y} — 12 points removed, 2 points awarded!");
+                        // Robot is parked (below park threshold)
+                        if (!parkScored && !deepClimbScored)
+                        {
+                            AddBlueScore(2);
+                            parkScored = true;
+                            Debug.Log($"Robot parked at Y={robotPos.y} ï¿½ 2 points awarded to Blue!");
+                        }
+                        else if (deepClimbScored)
+                        {
+                            // Robot dropped from climb to park level
+                            SubtractBlueScore(12);
+                            deepClimbScored = false;
+                            AddBlueScore(2);
+                            parkScored = true;
+                            Debug.Log($"Robot dropped from climb to park at Y={robotPos.y} ï¿½ 12 points removed, 2 points awarded!");
+                        }
+                    }
+                    else
+                    {
+                        // Robot is between park and climb thresholds (parkThresholdY < Y <= climbThresholdY)
+                        if (deepClimbScored)
+                        {
+                            // Robot dropped from climb but is still above park level
+                            SubtractBlueScore(12);
+                            deepClimbScored = false;
+                            Debug.Log($"Robot dropped from climb at Y={robotPos.y} ï¿½ 12 points removed, no park points (above park threshold)!");
+                        }
+                        // No park points awarded since Y > parkThresholdY
                     }
                 }
                 else
                 {
-                    // Robot is between park and climb thresholds (parkThresholdY < Y <= climbThresholdY)
+                    // Robot left the endgame zone, remove any endgame points
+                    if (parkScored)
+                    {
+                        SubtractBlueScore(2);
+                        parkScored = false;
+                        Debug.Log("Robot left park zone ï¿½ 2 points removed from Blue!");
+                    }
                     if (deepClimbScored)
                     {
-                        // Robot dropped from climb but is still above park level
                         SubtractBlueScore(12);
                         deepClimbScored = false;
-                        Debug.Log($"Robot dropped from climb at Y={robotPos.y} — 12 points removed, no park points (above park threshold)!");
+                        Debug.Log("Robot left deep climb zone ï¿½ 12 points removed from Blue!");
                     }
-                    // No park points awarded since Y > parkThresholdY
-                }
-            }
-            else
-            {
-                // Robot left the endgame zone, remove any endgame points
-                if (parkScored)
-                {
-                    SubtractBlueScore(2);
-                    parkScored = false;
-                    Debug.Log("Robot left park zone — 2 points removed from Blue!");
-                }
-                if (deepClimbScored)
-                {
-                    SubtractBlueScore(12);
-                    deepClimbScored = false;
-                    Debug.Log("Robot left deep climb zone — 12 points removed from Blue!");
-                }
-            }
-        }
-
-        // Only process scoring if match hasn't ended
-        if (!MatchEnded())
-        {
-            GameObject[] allObjects = GameObject.FindObjectsOfType<GameObject>();
-            foreach (GameObject obj in allObjects)
-            {
-                if (obj.name == "Coral(Clone)" && obj.tag != "Coral")
-                {
-                    obj.tag = "Coral";
                 }
             }
 
-            GameObject[] algaeObjects = GameObject.FindGameObjectsWithTag("Algae");
-
-            foreach (GameObject algae in algaeObjects)
+            // Only process scoring if match hasn't ended
+            if (!MatchEnded())
             {
-                Vector3 pos = algae.transform.position;
-
-                if (IsWithinBounds(pos, processorCorner1, processorCorner2))
+                GameObject[] allObjects = GameObject.FindObjectsOfType<GameObject>();
+                foreach (GameObject obj in allObjects)
                 {
-                    if (!processorCooldowns.ContainsKey(algae) || Time.time - processorCooldowns[algae] >= processorCooldownTime)
+                    if (obj.name == "Coral(Clone)" && obj.tag != "Coral")
                     {
-                        AddBlueScore(6);
-                        processorCooldowns[algae] = Time.time;
+                        obj.tag = "Coral";
                     }
                 }
 
-                bool isInBarge = IsWithinBounds(pos, bargeCorner1, bargeCorner2);
-                bool hasScored = algaeInBarge.Contains(algae);
-                bool cooldownReady = !bargeLastScoreTime.ContainsKey(algae) || Time.time - bargeLastScoreTime[algae] >= bargeCooldownTime;
+                GameObject[] algaeObjects = GameObject.FindGameObjectsWithTag("Algae");
 
-                if (isInBarge)
+                foreach (GameObject algae in algaeObjects)
                 {
-                    if (!hasScored && cooldownReady)
+                    Vector3 pos = algae.transform.position;
+
+                    if (IsWithinBounds(pos, processorCorner1, processorCorner2))
                     {
-                        AddBlueScore(4);
-                        algaeInBarge.Add(algae);
-                        bargeLastScoreTime[algae] = Time.time;
+                        if (!processorCooldowns.ContainsKey(algae) || Time.time - processorCooldowns[algae] >= processorCooldownTime)
+                        {
+                            AddBlueScore(6);
+                            processorCooldowns[algae] = Time.time;
+                        }
                     }
-                }
-                else if (hasScored)
-                {
-                    SubtractBlueScore(4);
-                    algaeInBarge.Remove(algae);
-                }
-            }
 
-            GameObject[] l4CoralObjects = GameObject.FindGameObjectsWithTag("Coral");
+                    bool isInBarge = IsWithinBounds(pos, bargeCorner1, bargeCorner2);
+                    bool hasScored = algaeInBarge.Contains(algae);
+                    bool cooldownReady = !bargeLastScoreTime.ContainsKey(algae) || Time.time - bargeLastScoreTime[algae] >= bargeCooldownTime;
 
-            // L4 Peg zone scoring (5 points)
-            HashSet<GameObject> coralsCurrentlyInL4PegZones = new HashSet<GameObject>();
-
-            // L4 Peg zone scoring
-            foreach (GameObject coral in l4CoralObjects)
-            {
-                Vector3 pos = coral.transform.position;
-                foreach (var (corner1, corner2) in l4PegZones)
-                {
-                    if (IsWithinBounds(pos, corner1, corner2))
+                    if (isInBarge)
                     {
-                        coralsCurrentlyInL4PegZones.Add(coral);
-                        break;
+                        if (!hasScored && cooldownReady)
+                        {
+                            AddBlueScore(4);
+                            algaeInBarge.Add(algae);
+                            bargeLastScoreTime[algae] = Time.time;
+                        }
                     }
-                }
-            }
-
-            foreach (var coral in coralsCurrentlyInL4PegZones)
-            {
-                if (!coralsScoredInPegZones.Contains(coral))
-                {
-                    AddBlueScore(InAutonomous() ? 7 : 5);
-                    coralsScoredInPegZones.Add(coral);
-                }
-            }
-
-            var coralsLeftL4 = new List<GameObject>();
-            foreach (var coral in coralsScoredInPegZones)
-            {
-                if (!coralsCurrentlyInL4PegZones.Contains(coral))
-                {
-                    SubtractBlueScore(InAutonomous() ? 7 : 5);
-                    coralsLeftL4.Add(coral);
-                }
-            }
-            foreach (var coral in coralsLeftL4)
-            {
-                coralsScoredInPegZones.Remove(coral);
-            }
-
-            // L3 Peg zone scoring
-            HashSet<GameObject> coralsCurrentlyInL3PegZones = new HashSet<GameObject>();
-            foreach (GameObject coral in l4CoralObjects)
-            {
-                Vector3 pos = coral.transform.position;
-                foreach (var (corner1, corner2) in l3PegZones)
-                {
-                    if (IsWithinBounds(pos, corner1, corner2))
+                    else if (hasScored)
                     {
-                        coralsCurrentlyInL3PegZones.Add(coral);
-                        break;
+                        SubtractBlueScore(4);
+                        algaeInBarge.Remove(algae);
                     }
                 }
-            }
 
-            foreach (var coral in coralsCurrentlyInL3PegZones)
-            {
-                if (!coralsScoredInL3Zones.Contains(coral))
-                {
-                    AddBlueScore(InAutonomous() ? 6 : 4);
-                    coralsScoredInL3Zones.Add(coral);
-                }
-            }
+                GameObject[] l4CoralObjects = GameObject.FindGameObjectsWithTag("Coral");
 
-            var coralsLeftL3 = new List<GameObject>();
-            foreach (var coral in coralsScoredInL3Zones)
-            {
-                if (!coralsCurrentlyInL3PegZones.Contains(coral))
-                {
-                    SubtractBlueScore(InAutonomous() ? 6 : 4);
-                    coralsLeftL3.Add(coral);
-                }
-            }
-            foreach (var coral in coralsLeftL3)
-            {
-                coralsScoredInL3Zones.Remove(coral);
-            }
+                // L4 Peg zone scoring (5 points)
+                HashSet<GameObject> coralsCurrentlyInL4PegZones = new HashSet<GameObject>();
 
-            // L2 Peg zone scoring
-            HashSet<GameObject> coralsCurrentlyInL2PegZones = new HashSet<GameObject>();
-            foreach (GameObject coral in l4CoralObjects)
-            {
-                Vector3 pos = coral.transform.position;
-                foreach (var (corner1, corner2) in l2PegZones)
+                // L4 Peg zone scoring
+                foreach (GameObject coral in l4CoralObjects)
                 {
-                    if (IsWithinBounds(pos, corner1, corner2))
+                    Vector3 pos = coral.transform.position;
+                    foreach (var (corner1, corner2) in l4PegZones)
                     {
-                        coralsCurrentlyInL2PegZones.Add(coral);
-                        break;
+                        if (IsWithinBounds(pos, corner1, corner2))
+                        {
+                            coralsCurrentlyInL4PegZones.Add(coral);
+                            break;
+                        }
                     }
                 }
-            }
 
-            foreach (var coral in coralsCurrentlyInL2PegZones)
-            {
-                if (!coralsScoredInL2Zones.Contains(coral))
+                foreach (var coral in coralsCurrentlyInL4PegZones)
                 {
-                    AddBlueScore(InAutonomous() ? 4 : 3);
-                    coralsScoredInL2Zones.Add(coral);
-                }
-            }
-
-            var coralsLeftL2 = new List<GameObject>();
-            foreach (var coral in coralsScoredInL2Zones)
-            {
-                if (!coralsCurrentlyInL2PegZones.Contains(coral))
-                {
-                    SubtractBlueScore(InAutonomous() ? 4 : 3);
-                    coralsLeftL2.Add(coral);
-                }
-            }
-            foreach (var coral in coralsLeftL2)
-            {
-                coralsScoredInL2Zones.Remove(coral);
-            }
-
-            // L1 zone scoring
-            HashSet<GameObject> coralsCurrentlyInL1PegZones = new HashSet<GameObject>();
-            foreach (GameObject coral in l4CoralObjects)
-            {
-                Vector3 pos = coral.transform.position;
-                foreach (var (corner1, corner2) in l1PegZones)
-                {
-                    if (IsWithinBounds(pos, corner1, corner2))
+                    if (!coralsScoredInPegZones.Contains(coral))
                     {
-                        coralsCurrentlyInL1PegZones.Add(coral);
-                        break;
+                        AddBlueScore(InAutonomous() ? 7 : 5);
+                        coralsScoredInPegZones.Add(coral);
                     }
                 }
-            }
 
-            foreach (var coral in coralsCurrentlyInL1PegZones)
-            {
-                if (!coralsScoredInL1Zones.Contains(coral))
+                var coralsLeftL4 = new List<GameObject>();
+                foreach (var coral in coralsScoredInPegZones)
                 {
-                    AddBlueScore(InAutonomous() ? 3 : 2);
-                    coralsScoredInL1Zones.Add(coral);
+                    if (!coralsCurrentlyInL4PegZones.Contains(coral))
+                    {
+                        SubtractBlueScore(InAutonomous() ? 7 : 5);
+                        coralsLeftL4.Add(coral);
+                    }
                 }
-            }
+                foreach (var coral in coralsLeftL4)
+                {
+                    coralsScoredInPegZones.Remove(coral);
+                }
 
-            var coralsLeftL1 = new List<GameObject>();
-            foreach (var coral in coralsScoredInL1Zones)
-            {
-                if (!coralsCurrentlyInL1PegZones.Contains(coral))
+                // L3 Peg zone scoring
+                HashSet<GameObject> coralsCurrentlyInL3PegZones = new HashSet<GameObject>();
+                foreach (GameObject coral in l4CoralObjects)
                 {
-                    SubtractBlueScore(InAutonomous() ? 3 : 2);
-                    coralsLeftL1.Add(coral);
+                    Vector3 pos = coral.transform.position;
+                    foreach (var (corner1, corner2) in l3PegZones)
+                    {
+                        if (IsWithinBounds(pos, corner1, corner2))
+                        {
+                            coralsCurrentlyInL3PegZones.Add(coral);
+                            break;
+                        }
+                    }
                 }
-            }
-            foreach (var coral in coralsLeftL1)
-            {
-                coralsScoredInL1Zones.Remove(coral);
+
+                foreach (var coral in coralsCurrentlyInL3PegZones)
+                {
+                    if (!coralsScoredInL3Zones.Contains(coral))
+                    {
+                        AddBlueScore(InAutonomous() ? 6 : 4);
+                        coralsScoredInL3Zones.Add(coral);
+                    }
+                }
+
+                var coralsLeftL3 = new List<GameObject>();
+                foreach (var coral in coralsScoredInL3Zones)
+                {
+                    if (!coralsCurrentlyInL3PegZones.Contains(coral))
+                    {
+                        SubtractBlueScore(InAutonomous() ? 6 : 4);
+                        coralsLeftL3.Add(coral);
+                    }
+                }
+                foreach (var coral in coralsLeftL3)
+                {
+                    coralsScoredInL3Zones.Remove(coral);
+                }
+
+                // L2 Peg zone scoring
+                HashSet<GameObject> coralsCurrentlyInL2PegZones = new HashSet<GameObject>();
+                foreach (GameObject coral in l4CoralObjects)
+                {
+                    Vector3 pos = coral.transform.position;
+                    foreach (var (corner1, corner2) in l2PegZones)
+                    {
+                        if (IsWithinBounds(pos, corner1, corner2))
+                        {
+                            coralsCurrentlyInL2PegZones.Add(coral);
+                            break;
+                        }
+                    }
+                }
+
+                foreach (var coral in coralsCurrentlyInL2PegZones)
+                {
+                    if (!coralsScoredInL2Zones.Contains(coral))
+                    {
+                        AddBlueScore(InAutonomous() ? 4 : 3);
+                        coralsScoredInL2Zones.Add(coral);
+                    }
+                }
+
+                var coralsLeftL2 = new List<GameObject>();
+                foreach (var coral in coralsScoredInL2Zones)
+                {
+                    if (!coralsCurrentlyInL2PegZones.Contains(coral))
+                    {
+                        SubtractBlueScore(InAutonomous() ? 4 : 3);
+                        coralsLeftL2.Add(coral);
+                    }
+                }
+                foreach (var coral in coralsLeftL2)
+                {
+                    coralsScoredInL2Zones.Remove(coral);
+                }
+
+                // L1 zone scoring
+                HashSet<GameObject> coralsCurrentlyInL1PegZones = new HashSet<GameObject>();
+                foreach (GameObject coral in l4CoralObjects)
+                {
+                    Vector3 pos = coral.transform.position;
+                    foreach (var (corner1, corner2) in l1PegZones)
+                    {
+                        if (IsWithinBounds(pos, corner1, corner2))
+                        {
+                            coralsCurrentlyInL1PegZones.Add(coral);
+                            break;
+                        }
+                    }
+                }
+
+                foreach (var coral in coralsCurrentlyInL1PegZones)
+                {
+                    if (!coralsScoredInL1Zones.Contains(coral))
+                    {
+                        AddBlueScore(InAutonomous() ? 3 : 2);
+                        coralsScoredInL1Zones.Add(coral);
+                    }
+                }
+
+                var coralsLeftL1 = new List<GameObject>();
+                foreach (var coral in coralsScoredInL1Zones)
+                {
+                    if (!coralsCurrentlyInL1PegZones.Contains(coral))
+                    {
+                        SubtractBlueScore(InAutonomous() ? 3 : 2);
+                        coralsLeftL1.Add(coral);
+                    }
+                }
+                foreach (var coral in coralsLeftL1)
+                {
+                    coralsScoredInL1Zones.Remove(coral);
+                }
             }
         }
     }
