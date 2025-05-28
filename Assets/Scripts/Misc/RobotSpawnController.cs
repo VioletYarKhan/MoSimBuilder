@@ -454,6 +454,11 @@ public class RobotSpawnController : MonoBehaviour
         }
     }
 
+    public string getRobotName()
+    {
+        return robotName;
+    }
+
     public void Respawn()
     {
 
@@ -468,7 +473,8 @@ public class RobotSpawnController : MonoBehaviour
         if (_redRobotIndex > 2)
         {
             _redRobotIndex += 1;
-        } else if (PlayerPrefs.GetInt("redShotBlocker") == 1 || _redRobotIndex == 2)
+        }
+        else if (PlayerPrefs.GetInt("redShotBlocker") == 1 || _redRobotIndex == 2)
         {
             _redRobotIndex += 1;
         }
@@ -782,7 +788,7 @@ public class RobotSpawnController : MonoBehaviour
                 {
                     Camera.GetComponent<CameraPan>().Restart();
                 }
-               
+
             }
         }
     }

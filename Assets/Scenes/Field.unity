@@ -34389,12 +34389,12 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: e8ef4aa819152894790ba58b160a0df6, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  spawnVelocity: {x: 0, y: -1, z: 0}
+  spawnVelocity: {x: -2, y: -1, z: -4}
   gamePiece: {fileID: 7983116347886075350, guid: 85eea595c98ea834f9f34519d7905dce, type: 3}
   spawnPoint: {fileID: 335722950}
-  spawnType: 0
+  spawnType: 1
   spawnCollider: {fileID: 1545169768}
-  threshold: 0
+  threshold: 2
   spawnTimer: 2
   usePerformanceMode: 0
 --- !u!1 &284599379
@@ -89551,7 +89551,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 3987773f93b3d08468a70a232ab06e56, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  robotName: 25-1323-2
+  robotName: 25-3966
   cameraMode: 3
   alliance: 1
 --- !u!1 &755620779
@@ -120134,6 +120134,9 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   blueScoreText: {fileID: 1000430431}
   Bluescore: 0
+  autonTimeLimit: 15
+  matchTimeLimit: 150
+  endgameStartTime: 120
 --- !u!1 &1000879746
 GameObject:
   m_ObjectHideFlags: 0
@@ -164302,7 +164305,7 @@ Transform:
   m_GameObject: {fileID: 1383133810}
   serializedVersion: 2
   m_LocalRotation: {x: 0.15304591, y: -0.6903456, z: 0.15304591, w: 0.6903456}
-  m_LocalPosition: {x: 1.87, y: 1.91, z: 2.44}
+  m_LocalPosition: {x: 1.32, y: 2.25, z: 2.44}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children: []
@@ -188943,7 +188946,7 @@ MonoBehaviour:
   spawnPoint: {fileID: 1826317495}
   spawnType: 0
   spawnCollider: {fileID: 1531990990}
-  threshold: 0
+  threshold: 2
   spawnTimer: 2
   usePerformanceMode: 0
 --- !u!1 &1587834445
@@ -231865,6 +231868,9 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   blueScoreText: {fileID: 0}
   Bluescore: 0
+  autonTimeLimit: 15
+  matchTimeLimit: 150
+  endgameStartTime: 120
 --- !u!1 &1957218681
 GameObject:
   m_ObjectHideFlags: 0
@@ -248688,9 +248694,9 @@ MonoBehaviour:
   spawnVelocity: {x: 0, y: 0, z: -1}
   gamePiece: {fileID: 7983116347886075350, guid: 85eea595c98ea834f9f34519d7905dce, type: 3}
   spawnPoint: {fileID: 1858813672}
-  spawnType: 0
+  spawnType: 1
   spawnCollider: {fileID: 179431580}
-  threshold: 0
+  threshold: 2
   spawnTimer: 2
   usePerformanceMode: 0
 --- !u!1 &2088336329
